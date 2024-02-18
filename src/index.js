@@ -1,3 +1,6 @@
+import loadPage from './js/loadPage';
 import './main.css';
 
-console.log('alive');
+window.onload = () => {
+  loadPage();
+};
