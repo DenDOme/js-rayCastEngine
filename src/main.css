@@ -23,3 +23,8 @@ body {
     text-align: center;
     align-items: center;
 }
+
+.line {
+    position: absolute;
+    z-index: 20;
+}
