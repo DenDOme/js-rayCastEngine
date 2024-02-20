@@ -87,17 +87,17 @@ const player = () => {
     faceLine.style.transform = `rotate(${angle + 1.5708}rad)`;
     canvas.appendChild(faceLine);
 
-    const rayLine = document.createElement('div');
-    rayLine.style.position = 'absolute';
-    rayLine.style.zIndex = '12';
-    rayLine.style.height = '1px';
-    rayLine.style.width = '100px';
-    rayLine.style.backgroundColor = 'green';
-    rayLine.id = 'line';
-    rayLine.style.top = `${y}px`;
-    rayLine.style.left = `${x}px`;
+    for (let i = 0; i < 60; i++) {
+      const rayLine = document.createElement('div');
+      rayLine.style.position = 'absolute';
+      rayLine.style.zIndex = '10';
+      rayLine.style.height = '1px';
+      rayLine.style.width = '0px';
+      rayLine.style.backgroundColor = 'green';
+      rayLine.classList.add('line');
 
-    canvas.appendChild(rayLine);
+      canvas.appendChild(rayLine);
+    }
 
     canvas.appendChild(createPlayer);
   };
@@ -156,11 +156,9 @@ const player = () => {
       rayCast();
     });
   };
-  const createRayLine = (startX, startY, endX, endY) => {
-    console.log('casting');
-
+  const createRayLine = (startX, startY, endX, endY, line, angleNew) => {
     const getPlayer = document.getElementById('player');
-    const getLine = document.getElementById('line');
+    const getLine = line;
     // Calculate the angle and length of the ray line
     const dx = endX - startX;
     const dy = endY - startY;
@@ -170,25 +168,30 @@ const player = () => {
     const centerX = getPlayer.offsetLeft + getPlayer.offsetWidth / 2;
     const centerY = getPlayer.offsetTop + getPlayer.offsetHeight / 2;
 
-    const x = centerX + 150 * Math.cos(angle);
-    const y = centerY + 150 * Math.sin(angle);
+    const x = centerX + (length / 2) * Math.cos(angleNew);
+    const y = centerY + (length / 2) * Math.sin(angleNew);
 
     getLine.style.top = `${y - getLine.offsetHeight / 2}px`;
     getLine.style.left = `${x - getLine.offsetWidth / 2}px`;
-    getLine.style.transform = `rotate(${angle}rad)`;
+    getLine.style.transform = `rotate(${angleNew}rad)`;
   };
 
   const rayCast = () => {
-    const ra = angle;
-    let rx = playerX;
-    let ry = playerY;
+    const DR = 0.0174533;
+    const getlines = document.getElementsByClassName('line');
+    let ra = angle - DR * 30;
+    for (let i = 0; i < 60; i++) {
+      let rx = playerX;
+      let ry = playerY;
 
-    while (!mapArr[Math.floor(ry / 64) * mapX + Math.floor(rx / 64)]) {
-      rx += Math.cos(ra);
-      ry += Math.sin(ra);
+      while (!mapArr[Math.floor(ry / 64) * mapX + Math.floor(rx / 64)]) {
+        rx += Math.cos(ra);
+        ry += Math.sin(ra);
+      }
+
+      createRayLine(playerX, playerY, rx, ry, getlines[i], ra);
+      ra += DR;
     }
-
-    createRayLine(playerX, playerY, rx, ry);
   };
   return { drawPlayer, movePlayer };
 };
