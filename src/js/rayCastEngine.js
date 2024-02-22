@@ -1,8 +1,8 @@
 const canvasRaycast = () => {
   const canvas = document.getElementById('canvas');
   // player-things
-  let playerX = 300;
-  let playerY = 300;
+  let playerX = 100;
+  let playerY = 100;
   let deltaX = 0;
   let deltaY = 0;
   let angle = 0;
@@ -13,14 +13,14 @@ const canvasRaycast = () => {
   const mapArr = [
     // eslint-disable-next-line prettier/prettier
       1,1,1,1,1,1,1,1,
-      1,0,1,0,0,0,0,1,
-      1,0,1,0,0,0,0,1,
+      1,0,0,0,1,0,0,1,
+      1,0,1,0,1,0,0,1,
     // eslint-disable-next-line prettier/prettier
+      1,0,1,0,1,0,0,1,
       1,0,1,0,0,0,0,1,
-      1,0,0,0,0,0,0,1,
-      1,0,0,0,0,1,0,1,
+      1,0,1,0,1,0,0,1,
     // eslint-disable-next-line prettier/prettier
-      1,0,0,0,0,0,0,1,
+      1,0,0 ,0,1,0,0,1,
       1,1,1,1,1,1,1,1,
   ];
   const loadMap = () => {
@@ -55,34 +55,66 @@ const canvasRaycast = () => {
   const player = () => {
     const newPlayer = canvas.getContext('2d');
     newPlayer.fillStyle = 'yellow';
-    newPlayer.fillRect(playerX, playerY, 8, 8);
     const playerSize = 8;
+    newPlayer.fillRect(playerX, playerY, playerSize, playerSize);
     const movePlayer = () => {
+      let w = 0;
+      let a = 0;
+      let s = 0;
+      let d = 0;
       document.addEventListener('keydown', (e) => {
-        let newPlayerX = playerX;
-        let newPlayerY = playerY;
-
+        if (e.code === 'KeyW') {
+          w = 1;
+        }
+        if (e.code === 'KeyS') {
+          s = 1;
+        }
+        if (e.code === 'KeyA') {
+          a = 1;
+        }
+        if (e.code === 'KeyD') {
+          d = 1;
+        }
+      });
+      document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyW') {
+          w = 0;
+        }
+        if (e.code === 'KeyS') {
+          s = 0;
+        }
+        if (e.code === 'KeyA') {
+          a = 0;
+        }
+        if (e.code === 'KeyD') {
+          d = 0;
+        }
+      });
+      const movePlayerOnKey = () => {
         newPlayer.clearRect(0, 0, canvas.width, canvas.height);
         loadMap();
-
-        if (e.code === 'KeyW') {
+        let newPlayerX = playerX;
+        let newPlayerY = playerY;
+        deltaX = Math.cos(angle) * 2;
+        deltaY = Math.sin(angle) * 2;
+        if (w === 1) {
           newPlayerX += deltaX;
           newPlayerY += deltaY;
         }
-        if (e.code === 'KeyS') {
+        if (s === 1) {
           newPlayerX -= deltaX;
           newPlayerY -= deltaY;
         }
-        if (e.code === 'KeyA') {
-          angle -= 0.1;
+        if (a === 1) {
+          angle -= 0.05;
           if (angle < 0) {
             angle += 2 * Math.PI;
           }
           deltaX = Math.cos(angle) * 5;
           deltaY = Math.sin(angle) * 5;
         }
-        if (e.code === 'KeyD') {
-          angle += 0.1;
+        if (d === 1) {
+          angle += 0.05;
           if (angle > 2 * Math.PI) {
             angle -= 2 * Math.PI;
           }
@@ -90,22 +122,60 @@ const canvasRaycast = () => {
           deltaY = Math.sin(angle) * 5;
         }
 
-        const playerCollisionTopX = Math.floor((newPlayerX + 8) / 64);
-        const playerCollisionTopY = Math.floor((newPlayerY + 8) / 64);
+        let xf = playerSize;
+        if (deltaX < 0) {
+          xf = -3;
+        } else {
+          xf = playerSize;
+        }
+        let yf = playerSize;
+        if (deltaY < 0) {
+          yf = -3;
+        } else {
+          yf = playerSize;
+        }
+        let xb = playerSize;
+        if (deltaX > 0) {
+          xb = 0;
+        } else {
+          xb = -playerSize;
+        }
+        let yb = playerSize;
+        if (deltaY > 0) {
+          yb = 0;
+        } else {
+          yb = -playerSize;
+        }
+
+        const playerCollisionTopX = Math.floor((newPlayerX + xf) / 64);
+        const playerCollisionTopY = Math.floor((newPlayerY + yf) / 64);
+        const playerCollisionBotX = Math.floor((newPlayerX - xb) / 64);
+        const playerCollisionBotY = Math.floor((newPlayerY - yb) / 64);
         const playerCollisionX = Math.floor(newPlayerX / 64);
         const playerCollisionY = Math.floor(newPlayerY / 64);
 
-        if (
-          mapArr[playerCollisionY * mapX + playerCollisionX] === 0 &&
-          mapArr[playerCollisionTopY * mapX + playerCollisionTopX] === 0
-        ) {
-          playerX = newPlayerX;
-          playerY = newPlayerY;
+        if (w === 1) {
+          if (mapArr[playerCollisionY * mapX + playerCollisionTopX] === 0) {
+            playerX = newPlayerX;
+          }
+          if (mapArr[playerCollisionTopY * mapX + playerCollisionX] === 0) {
+            playerY = newPlayerY;
+          }
+        }
+        if (s === 1) {
+          if (mapArr[playerCollisionY * mapX + playerCollisionBotX] === 0) {
+            playerX = newPlayerX;
+          }
+          if (mapArr[playerCollisionBotY * mapX + playerCollisionX] === 0) {
+            playerY = newPlayerY;
+          }
         }
 
         drawPlayer(playerX, playerY);
         rayCast();
-      });
+        requestAnimationFrame(movePlayerOnKey);
+      };
+      movePlayerOnKey();
     };
     const rayCast = () => {
       const DR = 0.0174533;
