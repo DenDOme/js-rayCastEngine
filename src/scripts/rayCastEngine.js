@@ -1,8 +1,14 @@
+import basicTextures from "../assets/textures/basicTextures";
+
+const PI = Math.PI;
+const PI2 = Math.PI/2
+const PI3 = 3*Math.PI/2
+
 const canvasRaycast = () => {
   const canvas = document.getElementById('canvas');
   // player-things
-  let playerX = 100;
-  let playerY = 100;
+  let playerX = 300;
+  let playerY = 300;
   let deltaX = 0;
   let deltaY = 0;
   let angle = 0;
@@ -179,21 +185,102 @@ const canvasRaycast = () => {
     };
     const rayCast = () => {
       const DR = 0.0174533;
+      const fov = 60;
+      let shade = false;
       let ra = angle - DR * 30;
-      let distance = 10000000;
-      let hx;
-      let hr;
-      for (let i = 0; i < 60; i++) {
-        let rx = playerX;
-        let ry = playerY;
-
-        while (!mapArr[Math.floor(ry / 64) * mapX + Math.floor(rx / 64)]) {
-          rx += Math.cos(ra);
-          ry += Math.sin(ra);
+      if(ra < 0) {
+        ra += 2*PI;
+      }
+      if(ra > 2*PI){
+        ra -= 2*PI
+      }
+      let hx=playerX, hy=playerY;
+      let my,mx,mp,dof,rx,ry,yo,xo,distT;
+      for (let i = 0; i < fov; i++) {
+        // Check horizontal
+        dof = 0;
+        let distH = 10000000;
+        let aTan = -1/Math.tan(ra);
+        if(ra > PI){
+          ry = Math.floor(playerY/64)*64 - 0.0001;
+          rx = (playerY - ry) * aTan + playerX; 
+          yo = -64;
+          xo = - yo * aTan;
+        } else if(ra < PI){
+          ry = Math.floor(playerY/64)*64 + 64;
+          rx = (playerY - ry) * aTan + playerX; 
+          yo = 64;
+          xo = - yo * aTan;
+        } else {
+          rx = playerX;
+          ry = playerY;
+          dof = 8;
         }
-        hx = rx;
-        hr = ry;
-        distance = dist(playerX, playerY, hx, hr);
+        while(dof < 8){
+          mx = Math.floor(rx/64);
+          my = Math.floor(ry/64);
+          mp = my * mapX + mx;
+          if(mp > 0 && mp < mapX*mapY && mapArr[mp] === 1){
+            dof = 8;
+            hx=rx;
+            hy=ry;
+            distH = dist(playerX,playerY,hx,hy,ra);
+          }
+          else {
+            rx += xo;
+            ry += yo;
+            dof +=1;
+          }
+        }
+
+        // Check vertical
+        dof = 0;
+        let distV = 10000000, vx=playerX, vy=playerY;
+        let nTan = -Math.tan(ra);
+        if(ra > PI2 && ra < PI3){
+          rx = Math.floor(playerX/64)*64 - 0.0001;
+          ry = (playerX - rx) * nTan + playerY; 
+          xo = -64;
+          yo = - xo * nTan;
+        } else if(ra < PI2 || ra > PI3){
+          rx = Math.floor(playerX/64)*64 + 64;
+          ry = (playerX - rx) * nTan + playerY; 
+          xo = 64;
+          yo = - xo * nTan;
+        } else {
+          rx = playerX;
+          ry = playerY;
+          dof = 8;
+        }
+        while(dof < 8){
+          mx = Math.floor(rx/64);
+          my = Math.floor(ry/64);
+          mp = my * mapX + mx;
+          if(mp > 0 && mp < mapX*mapY && mapArr[mp] === 1){
+            dof = 8;
+            vx=rx;
+            vy=ry;
+            distV = dist(playerX,playerY,vx,vy,ra);
+          }
+          else {
+            rx += xo;
+            ry += yo;
+            dof +=1;
+          }
+        }
+
+        if(distV < distH){
+          rx = vx;
+          ry = vy;
+          distT = distV
+          shade = true;
+        }
+        if(distV > distH){
+          rx = hx;
+          ry = hy;
+          distT = distH
+          shade = false;
+        }
 
         const centerX = playerX + playerSize / 2;
         const centerY = playerY + playerSize / 2;
@@ -202,28 +289,67 @@ const canvasRaycast = () => {
 
         let ca = angle - ra;
         if (ca < 0) {
-          ca += 2 * Math.PI;
+          ca += 2 * PI;
         }
-        if (ca > 2 * Math.PI) {
-          ca -= 2 * Math.PI;
+        if (ca > 2 * PI) {
+          ca -= 2 * PI;
         }
-        distance *= Math.cos(ca);
 
-        let lineHeight = (mapS * 320) / distance;
-        if (lineHeight > 320) {
-          lineHeight = 320;
-        }
-        const lineO = 160 - lineHeight / 2;
-        draw3DWall(i * 8 + 530, lineHeight, lineO);
+        distT *= Math.cos(ca);
+
+        let lineHeight = (mapS * 320) / distT;
+
+        draw3DWall(i * 8 + 530, lineHeight, rx, ry, ra, shade);
 
         ra += DR;
+        if(ra < 0) {
+          ra += 2*PI;
+        }
+        if(ra > 2*PI){
+          ra -= 2*PI
+        }
       }
     };
 
-    const draw3DWall = (x, lineHeight, lineO) => {
+    const draw3DWall = (x, lineHeight, rx, ry, ra, shade) => {
       const newDrawBlock = canvas.getContext('2d');
-      newDrawBlock.fillStyle = 'red';
-      newDrawBlock.fillRect(x, 160 + lineO, 8, lineHeight);
+      let tyStep = 32.0/lineHeight
+      let tyO = 0;
+
+      if (lineHeight > 320) {
+        tyO = (lineHeight - 320) / 2.0;
+        lineHeight = 320;
+      }
+
+      const lineO = 160 - lineHeight / 2;
+      
+      let y;
+      let ty = tyO * tyStep;
+      let tx ;
+
+      if (shade) { 
+        tx = Math.floor((ry / 2.0) % 32);
+        if (ra > Math.PI / 2 && ra < (3 * Math.PI) / 2) {
+          tx = 31 - tx;  
+        }
+      } else { 
+        tx = Math.floor((rx / 2.0) % 32);
+        if (ra < Math.PI) {
+          tx = 31 - tx;  
+        }
+      }
+       
+      for(y = 0 ; y < lineHeight ; y++){
+        const color = basicTextures[Math.floor(ty) * 32 + Math.floor(tx)];
+        const c = color * 255;
+        newDrawBlock.fillStyle = `rgb(
+          ${c},
+          ${c},
+          ${c}
+        )`
+        newDrawBlock.fillRect(x, y + 160 + lineO, 8, 8);
+        ty+=tyStep;
+      }
     };
 
     const createRayLine = (startX, startY, endX, endY) => {
@@ -235,9 +361,8 @@ const canvasRaycast = () => {
       rayline.stroke();
     };
 
-    // Function to draw the player
     const drawPlayer = (x, y) => {
-      newPlayer.fillStyle = 'yellow'; // Player color
+      newPlayer.fillStyle = 'yellow'; 
       newPlayer.fillRect(x, y, playerSize, playerSize);
     };
     movePlayer();

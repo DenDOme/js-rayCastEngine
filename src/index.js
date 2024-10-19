@@ -1,4 +1,4 @@
 import './main.css';
-import canvasRaycast from './js/rayCastEngine';
+import canvasRaycast from './scripts/rayCastEngine';
 
 canvasRaycast();
