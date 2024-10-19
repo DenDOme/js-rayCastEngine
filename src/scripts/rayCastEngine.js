@@ -1,4 +1,5 @@
 import basicTextures from "../assets/textures/basicTextures";
+import brickTexture from "../assets/textures/brickTexture";
 
 const PI = Math.PI;
 const PI2 = Math.PI/2
@@ -18,7 +19,7 @@ const canvasRaycast = () => {
   const mapS = mapX * mapY;
   const mapArr = [
     // eslint-disable-next-line prettier/prettier
-      1,1,1,1,1,1,1,1,
+      1,2,2,2,1,1,1,1,
       1,0,0,0,1,0,0,1,
       1,0,1,0,1,0,0,1,
     // eslint-disable-next-line prettier/prettier
@@ -33,7 +34,7 @@ const canvasRaycast = () => {
     for (let i = 0; i < mapX; i++) {
       for (let j = 0; j < mapY; j++) {
         const newBlock = canvas.getContext('2d');
-        if (mapArr[j * mapX + i] === 1) {
+        if (mapArr[j * mapX + i] > 0) {
           newBlock.fillStyle = '#ffffff';
         } else {
           newBlock.fillStyle = '#000000';
@@ -220,7 +221,7 @@ const canvasRaycast = () => {
           mx = Math.floor(rx/64);
           my = Math.floor(ry/64);
           mp = my * mapX + mx;
-          if(mp > 0 && mp < mapX*mapY && mapArr[mp] === 1){
+          if(mp > 0 && mp < mapX*mapY && mapArr[mp] > 0){
             dof = 8;
             hx=rx;
             hy=ry;
@@ -256,7 +257,7 @@ const canvasRaycast = () => {
           mx = Math.floor(rx/64);
           my = Math.floor(ry/64);
           mp = my * mapX + mx;
-          if(mp > 0 && mp < mapX*mapY && mapArr[mp] === 1){
+          if(mp > 0 && mp < mapX*mapY && mapArr[mp] > 0){
             dof = 8;
             vx=rx;
             vy=ry;
@@ -340,7 +341,16 @@ const canvasRaycast = () => {
       }
        
       for(y = 0 ; y < lineHeight ; y++){
-        const color = basicTextures[Math.floor(ty) * 32 + Math.floor(tx)];
+        let mx = Math.floor(rx/64);
+        let my = Math.floor(ry/64);
+        let mp = my * mapX + mx;
+        let color;
+        if(mapArr[mp] === 1){
+          color = basicTextures[Math.floor(ty) * 32 + Math.floor(tx)];
+        } else if(mapArr[mp] === 2){
+          color = brickTexture[Math.floor(ty) * 32 + Math.floor(tx)];
+        }
+        
         const c = color * 255;
         newDrawBlock.fillStyle = `rgb(
           ${c},
@@ -349,6 +359,21 @@ const canvasRaycast = () => {
         )`
         newDrawBlock.fillRect(x, y + 160 + lineO, 8, 8);
         ty+=tyStep;
+      }
+
+      for(y = lineO+lineHeight ; y < 320 ; y++){
+        let dy=y-(320/2.0), deg = ra, raFix = Math.cos(angle-ra);
+        tx = playerX / 2 + Math.cos(deg)*158*32/dy/raFix;
+        ty = playerY / 2 + Math.sin(deg)*158*32/dy/raFix;
+        const color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+
+        const c = color * 255;
+        newDrawBlock.fillStyle = `rgb(
+          ${c},
+          ${c},
+          ${c}
+        )`
+        newDrawBlock.fillRect(x, y + 160, 8, 8);
       }
     };
 
