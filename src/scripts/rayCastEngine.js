@@ -1,5 +1,7 @@
 import basicTextures from "../assets/textures/basicTextures";
 import brickTexture from "../assets/textures/brickTexture";
+import windowTexture from "../assets/textures/windowTexture";
+import { startMapW, startMapF, startMapC } from "../assets/maps/startFloor";
 
 const PI = Math.PI;
 const PI2 = Math.PI/2
@@ -17,24 +19,14 @@ const canvasRaycast = () => {
   const mapX = 8;
   const mapY = 8;
   const mapS = mapX * mapY;
-  const mapArr = [
-    // eslint-disable-next-line prettier/prettier
-      1,2,2,2,1,1,1,1,
-      1,0,0,0,1,0,0,1,
-      1,0,1,0,1,0,0,1,
-    // eslint-disable-next-line prettier/prettier
-      1,0,1,0,1,0,0,1,
-      1,0,1,0,0,0,0,1,
-      1,0,1,0,1,0,0,1,
-    // eslint-disable-next-line prettier/prettier
-      1,0,0 ,0,1,0,0,1,
-      1,1,1,1,1,1,1,1,
-  ];
+  const mapW = startMapW;
+  const mapF = startMapF;
+  const mapC = startMapC;
   const loadMap = () => {
     for (let i = 0; i < mapX; i++) {
       for (let j = 0; j < mapY; j++) {
         const newBlock = canvas.getContext('2d');
-        if (mapArr[j * mapX + i] > 0) {
+        if (mapW[j * mapX + i] > 0) {
           newBlock.fillStyle = '#ffffff';
         } else {
           newBlock.fillStyle = '#000000';
@@ -162,18 +154,18 @@ const canvasRaycast = () => {
         const playerCollisionY = Math.floor(newPlayerY / 64);
 
         if (w === 1) {
-          if (mapArr[playerCollisionY * mapX + playerCollisionTopX] === 0) {
+          if (mapW[playerCollisionY * mapX + playerCollisionTopX] === 0) {
             playerX = newPlayerX;
           }
-          if (mapArr[playerCollisionTopY * mapX + playerCollisionX] === 0) {
+          if (mapW[playerCollisionTopY * mapX + playerCollisionX] === 0) {
             playerY = newPlayerY;
           }
         }
         if (s === 1) {
-          if (mapArr[playerCollisionY * mapX + playerCollisionBotX] === 0) {
+          if (mapW[playerCollisionY * mapX + playerCollisionBotX] === 0) {
             playerX = newPlayerX;
           }
-          if (mapArr[playerCollisionBotY * mapX + playerCollisionX] === 0) {
+          if (mapW[playerCollisionBotY * mapX + playerCollisionX] === 0) {
             playerY = newPlayerY;
           }
         }
@@ -221,7 +213,7 @@ const canvasRaycast = () => {
           mx = Math.floor(rx/64);
           my = Math.floor(ry/64);
           mp = my * mapX + mx;
-          if(mp > 0 && mp < mapX*mapY && mapArr[mp] > 0){
+          if(mp > 0 && mp < mapX*mapY && mapW[mp] > 0){
             dof = 8;
             hx=rx;
             hy=ry;
@@ -257,7 +249,7 @@ const canvasRaycast = () => {
           mx = Math.floor(rx/64);
           my = Math.floor(ry/64);
           mp = my * mapX + mx;
-          if(mp > 0 && mp < mapX*mapY && mapArr[mp] > 0){
+          if(mp > 0 && mp < mapX*mapY && mapW[mp] > 0){
             dof = 8;
             vx=rx;
             vy=ry;
@@ -345,9 +337,9 @@ const canvasRaycast = () => {
         let my = Math.floor(ry/64);
         let mp = my * mapX + mx;
         let color;
-        if(mapArr[mp] === 1){
+        if(mapW[mp] === 1){
           color = basicTextures[Math.floor(ty) * 32 + Math.floor(tx)];
-        } else if(mapArr[mp] === 2){
+        } else if(mapW[mp] === 2){
           color = brickTexture[Math.floor(ty) * 32 + Math.floor(tx)];
         }
         
@@ -365,15 +357,36 @@ const canvasRaycast = () => {
         let dy=y-(320/2.0), deg = ra, raFix = Math.cos(angle-ra);
         tx = playerX / 2 + Math.cos(deg)*158*32/dy/raFix;
         ty = playerY / 2 + Math.sin(deg)*158*32/dy/raFix;
-        const color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        let mp = mapF[Math.floor(ty/32.0) * mapX + Math.floor(tx/32.0)];
+        let color;
+        if(mp === 1){
+          color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        } else if(mp === 2){
 
-        const c = color * 255;
+        }
+
+        let c = color * 255;
         newDrawBlock.fillStyle = `rgb(
           ${c},
           ${c},
           ${c}
         )`
         newDrawBlock.fillRect(x, y + 160, 8, 8);
+
+        mp = mapC[Math.floor(ty/32.0) * mapX + Math.floor(tx/32.0)];
+        if(mp === 1){
+          color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        } else if (mp === 2){
+          color = windowTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        }
+
+        c = color * 255;
+        newDrawBlock.fillStyle = `rgb(
+          ${c},
+          ${c},
+          ${c}
+        )`
+        newDrawBlock.fillRect(x,320 - y + 160, 8, 8);
       }
     };
 
