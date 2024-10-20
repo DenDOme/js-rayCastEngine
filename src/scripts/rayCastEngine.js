@@ -1,7 +1,7 @@
-import basicTextures from "../assets/textures/basicTextures";
-import brickTexture from "../assets/textures/brickTexture";
-import windowTexture from "../assets/textures/windowTexture";
-import { startMapW, startMapF, startMapC } from "../assets/maps/startFloor";
+import { startMapW, startMapF, startMapC, startMapX, startMapY, startPlayerX, startPlayerY, startPlayerAng} from "../assets/maps/startMap.js";
+import ROUNDEDBRICKWALL from '../assets/textures/ROUNDBRICKS.js'
+import PATHROCKSFLOOR from "../assets/textures/PATHROCKS.js";
+import HEXAGONSCIELING from "../assets/textures/HEXAGONS.js";
 
 const PI = Math.PI;
 const PI2 = Math.PI/2
@@ -9,19 +9,18 @@ const PI3 = 3*Math.PI/2
 
 const canvasRaycast = () => {
   const canvas = document.getElementById('canvas');
-  // player-things
-  let playerX = 300;
-  let playerY = 300;
-  let deltaX = 0;
-  let deltaY = 0;
-  let angle = 0;
-  // map-things
-  const mapX = 8;
-  const mapY = 8;
+  let playerX = startPlayerX;
+  let playerY = startPlayerY;
+  let angle = startPlayerAng; 
+  const mapX = startMapX;
+  const mapY = startMapY;
   const mapS = mapX * mapY;
   const mapW = startMapW;
   const mapF = startMapF;
   const mapC = startMapC;
+  let deltaX = 0;
+  let deltaY = 0;
+
   const loadMap = () => {
     for (let i = 0; i < mapX; i++) {
       for (let j = 0; j < mapY; j++) {
@@ -146,26 +145,26 @@ const canvasRaycast = () => {
           yb = -playerSize;
         }
 
-        const playerCollisionTopX = Math.floor((newPlayerX + xf) / 64);
-        const playerCollisionTopY = Math.floor((newPlayerY + yf) / 64);
-        const playerCollisionBotX = Math.floor((newPlayerX - xb) / 64);
-        const playerCollisionBotY = Math.floor((newPlayerY - yb) / 64);
-        const playerCollisionX = Math.floor(newPlayerX / 64);
-        const playerCollisionY = Math.floor(newPlayerY / 64);
+        const playerCollisionTopX = Math.floor((newPlayerX + xf)>>6);
+        const playerCollisionTopY = Math.floor((newPlayerY + yf)>>6);
+        const playerCollisionBotX = Math.floor((newPlayerX - xb)>>6);
+        const playerCollisionBotY = Math.floor((newPlayerY - yb)>>6);
+        const playerCollisionX = Math.floor(newPlayerX>>6);
+        const playerCollisionY = Math.floor(newPlayerY>>6);
 
         if (w === 1) {
-          if (mapW[playerCollisionY * mapX + playerCollisionTopX] === 0) {
+          if (mapW[playerCollisionY * mapX + playerCollisionTopX] === 0 && mapF[playerCollisionY * mapX + playerCollisionTopX] > 0) {
             playerX = newPlayerX;
           }
-          if (mapW[playerCollisionTopY * mapX + playerCollisionX] === 0) {
+          if (mapW[playerCollisionTopY * mapX + playerCollisionX] === 0 && mapF[playerCollisionTopY * mapX + playerCollisionX] > 0) {
             playerY = newPlayerY;
           }
         }
         if (s === 1) {
-          if (mapW[playerCollisionY * mapX + playerCollisionBotX] === 0) {
+          if (mapW[playerCollisionY * mapX + playerCollisionBotX] === 0 && mapF[playerCollisionY * mapX + playerCollisionBotX] > 0) {
             playerX = newPlayerX;
           }
-          if (mapW[playerCollisionBotY * mapX + playerCollisionX] === 0) {
+          if (mapW[playerCollisionBotY * mapX + playerCollisionX] === 0 && mapF[playerCollisionBotY * mapX + playerCollisionX] > 0) {
             playerY = newPlayerY;
           }
         }
@@ -190,17 +189,18 @@ const canvasRaycast = () => {
       let hx=playerX, hy=playerY;
       let my,mx,mp,dof,rx,ry,yo,xo,distT;
       for (let i = 0; i < fov; i++) {
+
         // Check horizontal
         dof = 0;
         let distH = 10000000;
         let aTan = -1/Math.tan(ra);
         if(ra > PI){
-          ry = Math.floor(playerY/64)*64 - 0.0001;
+          ry = Math.floor(playerY>>6)*64 - 0.0001;
           rx = (playerY - ry) * aTan + playerX; 
           yo = -64;
           xo = - yo * aTan;
         } else if(ra < PI){
-          ry = Math.floor(playerY/64)*64 + 64;
+          ry = Math.floor(playerY>>6)*64 + 64;
           rx = (playerY - ry) * aTan + playerX; 
           yo = 64;
           xo = - yo * aTan;
@@ -210,8 +210,8 @@ const canvasRaycast = () => {
           dof = 8;
         }
         while(dof < 8){
-          mx = Math.floor(rx/64);
-          my = Math.floor(ry/64);
+          mx = Math.floor(rx>>6);
+          my = Math.floor(ry>>6);
           mp = my * mapX + mx;
           if(mp > 0 && mp < mapX*mapY && mapW[mp] > 0){
             dof = 8;
@@ -231,12 +231,12 @@ const canvasRaycast = () => {
         let distV = 10000000, vx=playerX, vy=playerY;
         let nTan = -Math.tan(ra);
         if(ra > PI2 && ra < PI3){
-          rx = Math.floor(playerX/64)*64 - 0.0001;
+          rx = Math.floor(playerX>>6)*64 - 0.0001;
           ry = (playerX - rx) * nTan + playerY; 
           xo = -64;
           yo = - xo * nTan;
         } else if(ra < PI2 || ra > PI3){
-          rx = Math.floor(playerX/64)*64 + 64;
+          rx = Math.floor(playerX>>6)*64 + 64;
           ry = (playerX - rx) * nTan + playerY; 
           xo = 64;
           yo = - xo * nTan;
@@ -246,8 +246,8 @@ const canvasRaycast = () => {
           dof = 8;
         }
         while(dof < 8){
-          mx = Math.floor(rx/64);
-          my = Math.floor(ry/64);
+          mx = Math.floor(rx>>6);
+          my = Math.floor(ry>>6);
           mp = my * mapX + mx;
           if(mp > 0 && mp < mapX*mapY && mapW[mp] > 0){
             dof = 8;
@@ -292,7 +292,7 @@ const canvasRaycast = () => {
 
         let lineHeight = (mapS * 320) / distT;
 
-        draw3DWall(i * 8 + 530, lineHeight, rx, ry, ra, shade);
+        draw3DWall(i, lineHeight, rx, ry, ra, shade);
 
         ra += DR;
         if(ra < 0) {
@@ -331,62 +331,78 @@ const canvasRaycast = () => {
           tx = 31 - tx;  
         }
       }
-       
+      // WALL RENDER 
       for(y = 0 ; y < lineHeight ; y++){
-        let mx = Math.floor(rx/64);
-        let my = Math.floor(ry/64);
+        let r,g,b,pixel;
+        pixel = (Math.floor(ty) * 32 + Math.floor(tx))*3;
+        r = ROUNDEDBRICKWALL[pixel + 0]
+        g = ROUNDEDBRICKWALL[pixel + 1]
+        b = ROUNDEDBRICKWALL[pixel + 2]
+        let mx = Math.floor(rx>>6);
+        let my = Math.floor(ry>>6);
         let mp = my * mapX + mx;
         let color;
-        if(mapW[mp] === 1){
-          color = basicTextures[Math.floor(ty) * 32 + Math.floor(tx)];
-        } else if(mapW[mp] === 2){
-          color = brickTexture[Math.floor(ty) * 32 + Math.floor(tx)];
-        }
-        
-        const c = color * 255;
+        // if(mapW[mp] === 1){
+        //   color = basicTextures[Math.floor(ty) * 32 + Math.floor(tx)];
+        // } else if(mapW[mp] === 2){
+        //   color = brickTexture[Math.floor(ty) * 32 + Math.floor(tx)];
+        // }
+
+        // let c = color * 255;
         newDrawBlock.fillStyle = `rgb(
-          ${c},
-          ${c},
-          ${c}
+          ${r},
+          ${g},
+          ${b}
         )`
-        newDrawBlock.fillRect(x, y + 160 + lineO, 8, 8);
+        newDrawBlock.fillRect(x * 8 + 530, y + 160 + lineO, 8, 8);
         ty+=tyStep;
       }
-
+      // FLOOR AND CEILING RENDER
       for(y = lineO+lineHeight ; y < 320 ; y++){
         let dy=y-(320/2.0), deg = ra, raFix = Math.cos(angle-ra);
         tx = playerX / 2 + Math.cos(deg)*158*32/dy/raFix;
         ty = playerY / 2 + Math.sin(deg)*158*32/dy/raFix;
         let mp = mapF[Math.floor(ty/32.0) * mapX + Math.floor(tx/32.0)];
-        let color;
-        if(mp === 1){
-          color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
-        } else if(mp === 2){
+        let r,g,b,pixel;
+        pixel = ((Math.floor(ty)&31) * 32 + (Math.floor(tx)&31))*3;
+        r = PATHROCKSFLOOR[pixel + 0]
+        g = PATHROCKSFLOOR[pixel + 1]
+        b = PATHROCKSFLOOR[pixel + 2]
+        // let color;
+        // if(mp === 1){
+        //   color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        // }
 
-        }
-
-        let c = color * 255;
+        // let c 
         newDrawBlock.fillStyle = `rgb(
-          ${c},
-          ${c},
-          ${c}
+          ${r},
+          ${g},
+          ${b}
         )`
-        newDrawBlock.fillRect(x, y + 160, 8, 8);
+        if(mp > 0){
+          newDrawBlock.fillRect(x * 8 + 530, y + 160, 8, 8);
+        }
 
         mp = mapC[Math.floor(ty/32.0) * mapX + Math.floor(tx/32.0)];
-        if(mp === 1){
-          color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
-        } else if (mp === 2){
-          color = windowTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
-        }
+        pixel = ((Math.floor(ty)&31) * 32 + (Math.floor(tx)&31))*3;
+        r = HEXAGONSCIELING[pixel + 0]
+        g = HEXAGONSCIELING[pixel + 1]
+        b = HEXAGONSCIELING[pixel + 2]
+        // if(mp === 1){
+        //   color = brickTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        // } else if (mp === 2){
+        //   color = windowTexture[(Math.floor(ty)&31) * 32 + (Math.floor(tx)&31)];
+        // }
 
-        c = color * 255;
+        // c = color * 255;
         newDrawBlock.fillStyle = `rgb(
-          ${c},
-          ${c},
-          ${c}
+          ${r},
+          ${g},
+          ${b}
         )`
-        newDrawBlock.fillRect(x,320 - y + 160, 8, 8);
+        if(mp > 0){
+          newDrawBlock.fillRect(x * 8 + 530,312 - y + 160, 8, 8);
+        }
       }
     };
 
