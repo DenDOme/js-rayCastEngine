@@ -7,6 +7,8 @@ import LAVA from '../assets/textures/LAVA.js';
 const PI = Math.PI;
 const PI2 = Math.PI/2
 const PI3 = 3*Math.PI/2
+const FPS = 20;
+const FRAME_TIME = 1000 / FPS;
 
 const canvasRaycast = () => {
   const canvas = document.getElementById('canvas');
@@ -63,6 +65,7 @@ const canvasRaycast = () => {
     const playerSize = 8;
     newPlayer.fillRect(playerX, playerY, playerSize, playerSize);
     const keys = { w: 0, a: 0, s: 0, d: 0 };
+    let lastFrameTime = 0;
 
     const movePlayer = () => {
       const handleKey = (e, value) => {
@@ -87,60 +90,66 @@ const canvasRaycast = () => {
       movePlayerOnKey();
     };
 
-    const movePlayerOnKey = () => {
-      newPlayer.clearRect(0, 0, canvas.width, canvas.height);
+    const movePlayerOnKey = (timestamp) => {
+      const  elapsed = timestamp - lastFrameTime;
 
-      // loadMap();
-
-      let newPlayerX = playerX;
-      let newPlayerY = playerY;
-
-      const speed = 5;
-      const rotationSpeed = 0.075;
-      deltaX = Math.cos(angle) * speed;
-      deltaY = Math.sin(angle) * speed;
-
-      if (keys.w === 1) {
-        newPlayerX += deltaX;
-        newPlayerY += deltaY;
-      }
-      if (keys.s === 1) {
-        newPlayerX -= deltaX;
-        newPlayerY -= deltaY;
-      }
-      if (keys.a === 1 || keys.d === 1) {
-        angle += keys.a === 1 ? -rotationSpeed : rotationSpeed;
-        angle = (angle + 2 * Math.PI) % (2 * Math.PI);
-    
+      if(elapsed >= FRAME_TIME){
+        newPlayer.clearRect(0, 0, canvas.width, canvas.height);
+  
+        // loadMap();
+  
+        let newPlayerX = playerX;
+        let newPlayerY = playerY;
+  
+        const speed = 5;
+        const rotationSpeed = 0.075;
         deltaX = Math.cos(angle) * speed;
         deltaY = Math.sin(angle) * speed;
+  
+        if (keys.w === 1) {
+          newPlayerX += deltaX;
+          newPlayerY += deltaY;
+        }
+        if (keys.s === 1) {
+          newPlayerX -= deltaX;
+          newPlayerY -= deltaY;
+        }
+        if (keys.a === 1 || keys.d === 1) {
+          angle += keys.a === 1 ? -rotationSpeed : rotationSpeed;
+          angle = (angle + 2 * Math.PI) % (2 * Math.PI);
+      
+          deltaX = Math.cos(angle) * speed;
+          deltaY = Math.sin(angle) * speed;
+        }
+  
+        const xf = deltaX < 0 ? -3 : playerSize;
+        const yf = deltaY < 0 ? -3 : playerSize;
+        const xb = deltaX > 0 ? 0 : -playerSize;
+        const yb = deltaY > 0 ? 0 : -playerSize;
+  
+        const playerCollisionTopX = Math.floor((newPlayerX + xf)>>6);
+        const playerCollisionTopY = Math.floor((newPlayerY + yf)>>6);
+        const playerCollisionBotX = Math.floor((newPlayerX - xb)>>6);
+        const playerCollisionBotY = Math.floor((newPlayerY - yb)>>6);
+        const playerCollisionX = Math.floor(newPlayerX>>6);
+        const playerCollisionY = Math.floor(newPlayerY>>6);
+  
+        const isPathClear = (y, x) => mapW[y * mapX + x] === 0 && mapF[y * mapX + x] > 0;
+  
+        if (keys.w === 1) {
+          if (isPathClear(playerCollisionY, playerCollisionTopX)) playerX = newPlayerX;
+          if (isPathClear(playerCollisionTopY, playerCollisionX)) playerY = newPlayerY;
+        }
+        if (keys.s === 1) {
+          if (isPathClear(playerCollisionY, playerCollisionBotX)) playerX = newPlayerX;
+          if (isPathClear(playerCollisionBotY, playerCollisionX)) playerY = newPlayerY;
+        }
+  
+        // drawPlayer(playerX, playerY);
+        rayCast();
+        lastFrameTime = timestamp;
       }
 
-      const xf = deltaX < 0 ? -3 : playerSize;
-      const yf = deltaY < 0 ? -3 : playerSize;
-      const xb = deltaX > 0 ? 0 : -playerSize;
-      const yb = deltaY > 0 ? 0 : -playerSize;
-
-      const playerCollisionTopX = Math.floor((newPlayerX + xf)>>6);
-      const playerCollisionTopY = Math.floor((newPlayerY + yf)>>6);
-      const playerCollisionBotX = Math.floor((newPlayerX - xb)>>6);
-      const playerCollisionBotY = Math.floor((newPlayerY - yb)>>6);
-      const playerCollisionX = Math.floor(newPlayerX>>6);
-      const playerCollisionY = Math.floor(newPlayerY>>6);
-
-      const isPathClear = (y, x) => mapW[y * mapX + x] === 0 && mapF[y * mapX + x] > 0;
-
-      if (keys.w === 1) {
-        if (isPathClear(playerCollisionY, playerCollisionTopX)) playerX = newPlayerX;
-        if (isPathClear(playerCollisionTopY, playerCollisionX)) playerY = newPlayerY;
-      }
-      if (keys.s === 1) {
-        if (isPathClear(playerCollisionY, playerCollisionBotX)) playerX = newPlayerX;
-        if (isPathClear(playerCollisionBotY, playerCollisionX)) playerY = newPlayerY;
-      }
-
-      // drawPlayer(playerX, playerY);
-      rayCast();
       requestAnimationFrame(movePlayerOnKey);
     };
 
