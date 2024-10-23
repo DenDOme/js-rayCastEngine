@@ -22,6 +22,12 @@ const canvasRaycast = () => {
   let deltaX = 0;
   let deltaY = 0;
 
+  const windowHeight = window.innerHeight;
+  const windowWidth = window.innerWidth;
+
+  canvas.height = windowHeight;
+  canvas.width = windowWidth
+
   const loadMap = () => {
     for (let i = 0; i < mapX; i++) {
       for (let j = 0; j < mapY; j++) {
@@ -84,13 +90,13 @@ const canvasRaycast = () => {
     const movePlayerOnKey = () => {
       newPlayer.clearRect(0, 0, canvas.width, canvas.height);
 
-      loadMap();
+      // loadMap();
 
       let newPlayerX = playerX;
       let newPlayerY = playerY;
 
-      const speed = 2;
-      const rotationSpeed = 0.05;
+      const speed = 5;
+      const rotationSpeed = 0.075;
       deltaX = Math.cos(angle) * speed;
       deltaY = Math.sin(angle) * speed;
 
@@ -133,13 +139,13 @@ const canvasRaycast = () => {
         if (isPathClear(playerCollisionBotY, playerCollisionX)) playerY = newPlayerY;
       }
 
-      drawPlayer(playerX, playerY);
+      // drawPlayer(playerX, playerY);
       rayCast();
       requestAnimationFrame(movePlayerOnKey);
     };
 
     const rayCast = () => {
-      const graphics = 1;
+      const graphics = 2;
       const DR = 0.0174533;
       const fov = 60 * graphics;
       const pixelSize = 8 / graphics;
@@ -167,26 +173,28 @@ const canvasRaycast = () => {
         const centerX = playerX + playerSize / 2;
         const centerY = playerY + playerSize / 2;
 
-        createRayLine(centerX, centerY, rx, ry);
+        // createRayLine(centerX, centerY, rx, ry);
 
         let ca = normalizeAngle(angle - ra);
         distT *= Math.cos(ca);
 
-        let lineHeight = (mapS * 320) / distT;
+        let lineHeight = (mapS * windowHeight) / distT;
 
-        drawGraphics(i, lineHeight, rx, ry, ra, shade, pixelSize);
+        let blockWidth = windowWidth / fov
+
+        drawGraphics(i, lineHeight, rx, ry, ra, shade, pixelSize, blockWidth);
 
         ra = normalizeAngle(ra + (DR / graphics));
       }
     };
 
-    const drawGraphics = (x, lineHeight, rx, ry, ra, shade, pixelSize) => {
+    const drawGraphics = (x, lineHeight, rx, ry, ra, shade, pixelSize, blockWidth) => {
       const newDrawBlock = canvas.getContext('2d');
       let tyStep = 32.0/lineHeight
-      let tyO = lineHeight > 320 ? (lineHeight - 320) / 2.0 : 0;
-      lineHeight = Math.min(lineHeight, 320);
+      let tyO = lineHeight > windowHeight ? (lineHeight - windowHeight) / 2.0 : 0;
+      lineHeight = Math.min(lineHeight, windowHeight);
 
-      const lineO = 160 - lineHeight / 2;
+      const lineO = (windowHeight / 2) - lineHeight / 2;
       
       let tx = shade ? Math.floor((ry / 2.0) % 32) : Math.floor((rx / 2.0) % 32);
       if (shade ? (ra > Math.PI / 2 && ra < (3 * Math.PI) / 2) : ra < Math.PI) {
@@ -200,15 +208,15 @@ const canvasRaycast = () => {
         const [r, g, b] = ROUNDEDBRICKWALL.slice(pixel, pixel + 3);
         
         newDrawBlock.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        newDrawBlock.fillRect(x * pixelSize + 530, y + 160 + lineO, pixelSize, pixelSize);
+        newDrawBlock.fillRect(x * blockWidth, y + lineO, blockWidth, pixelSize);
         ty += tyStep;
       }
     
       // FLOOR AND CEILING RENDER
-      for (let y = lineO + lineHeight; y < 320; y++) {
-        let dy = y - 160 + 1;
-        let posZ = 0.5 * 320;
-        let rowDist = posZ / dy;
+      for (let y = lineO + lineHeight; y < windowHeight; y++) {
+        let dy = y - (windowHeight / 2) + 1;
+        let posZ = 0.5 * windowHeight;
+        let rowDist = posZ / dy;  
         let rayDirX = Math.cos(ra);
         let rayDirY = Math.sin(ra);  
         let raFix = Math.cos(angle - ra);
@@ -226,11 +234,11 @@ const canvasRaycast = () => {
         } else {
           choosedTexture = PATHROCKSFLOOR;
         }
-        renderPixel(newDrawBlock, mp, tx, ty, choosedTexture, x, y, pixelSize);
+        renderPixel(newDrawBlock, mp, tx, ty, choosedTexture, x, y, pixelSize, blockWidth);
     
         // CEILING RENDER
         mp = mapC[Math.floor(ty / 32) * mapX + Math.floor(tx / 32)];
-        renderPixel(newDrawBlock, mp, tx, ty, HEXAGONSCIELING, x, 320 - pixelSize - y, pixelSize);
+        renderPixel(newDrawBlock, mp, tx, ty, HEXAGONSCIELING, x, windowHeight - pixelSize - y, pixelSize, blockWidth);
       }
     };
     
@@ -329,12 +337,12 @@ const canvasRaycast = () => {
     return angle;
   };
 
-  const renderPixel = (ctx, mp, tx, ty, texture, x, y, pixelSize) => {
+  const renderPixel = (ctx, mp, tx, ty, texture, x, y, pixelSize, blockWidth) => {
     if (mp > 0) {
       const pixel = ((Math.floor(ty) & 31) * 32 + (Math.floor(tx) & 31)) * 3;
       const [r, g, b] = texture.slice(pixel, pixel + 3);
       ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-      ctx.fillRect(x * pixelSize + 530, y + 160, pixelSize, pixelSize);
+      ctx.fillRect(x * blockWidth, y, blockWidth, pixelSize);
     }
   };
 
@@ -351,7 +359,7 @@ const canvasRaycast = () => {
 
   const dist = (sx, sy, ex, ey) => Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2);
 
-  loadMap();
+  // loadMap();
   player();
 };
 export default canvasRaycast;
