@@ -206,11 +206,18 @@ const canvasRaycast = () => {
     
       // FLOOR AND CEILING RENDER
       for (let y = lineO + lineHeight; y < 320; y++) {
-        let dy = y - 160;
+        let dy = y - 160 + 1;
+        let posZ = 0.5 * 320;
+        let rowDist = posZ / dy;
+        let rayDirX = Math.cos(ra);
+        let rayDirY = Math.sin(ra);  
         let raFix = Math.cos(angle - ra);
-        let tx = playerX / 2 + Math.cos(ra) * 158 * 32 / dy / raFix;
-        let ty = playerY / 2 + Math.sin(ra) * 158 * 32 / dy / raFix;
-    
+
+        rowDist /= raFix
+
+        let tx = playerX / 2 + rayDirX * rowDist * 32;
+        let ty = playerY / 2 + rayDirY * rowDist * 32;
+        
         // FLOOR RENDER
         let mp = mapF[Math.floor(ty / 32) * mapX + Math.floor(tx / 32)];
         let choosedTexture;
